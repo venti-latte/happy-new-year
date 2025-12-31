@@ -21,6 +21,33 @@
             align-items: center;
             filter: contrast(120%);
         }
+        /* Instructions */
+        #instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 15px;
+            text-align: center;
+            font-family: 'Caveat', cursive;
+            font-size: 28px;
+            z-index: 1000;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            line-height: 1.8;
+        }
+        #instructions.hidden {
+            display: none;
+        }
+        #instructions p {
+            margin: 15px 0;
+        }
+        #instructions .highlight {
+            color: #88ccff;
+            font-size: 32px;
+        }
         /* Container */
         .container {
             width: 100%;
@@ -52,7 +79,14 @@
 </head>
 <body>
     <!-- Music Placeholder -->
-    <audio src="[MUSIC_URL_PLACEHOLDER]" id="mp3" loop="loop"></audio>
+    <audio src="https://github.com/venti-latte/happy-new-year/raw/refs/heads/main/bgmusic.mp3" id="mp3" loop="loop"></audio>
+    
+    <!-- Instructions -->
+    <div id="instructions">
+        <p class="highlight">Click anywhere to start reading.</p>
+        <p>Use your left & right arrow keys to navigate</p>
+        <p>Or click to advance the messages.</p>
+    </div>
     
     <div class="container">
         <div class="content">
@@ -62,11 +96,39 @@
     </div>
 
     <script>
-        // Wait for DOM to be ready
-        window.addEventListener('DOMContentLoaded', function() {
-            // Request Animation Frame polyfill
-            window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-              window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+window.addEventListener('DOMContentLoaded', function () {
+
+  /* ===============================
+     REQUEST ANIMATION FRAME
+  =============================== */
+  window.requestAnimationFrame =
+    window.requestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.msRequestAnimationFrame;
+
+  /* ===============================
+     AUDIO + INSTRUCTIONS CONTROL
+  =============================== */
+const audio = document.getElementById('mp3');
+const instructions = document.getElementById('instructions');
+
+let unlocked = false;
+
+document.addEventListener('pointerdown', function unlockAudio() {
+  if (unlocked) return;
+  unlocked = true;
+
+  // MUST be first line
+  audio.muted = false;
+  audio.volume = 1;
+  audio.loop = true;
+
+  audio.play();
+
+  instructions.classList.add('hidden');
+
+}, { once: true });
 
             // Universe (Stars) Variables
             var starDensity = .255;
@@ -225,6 +287,7 @@
                     particles = [],
                     quiver = true, 
                     texts = [
+                "Click me first.",
                 "Hi Dan",
                 "Happy New Year",
                 "I hope you're doing well",
@@ -438,16 +501,37 @@
 
                     event: function() {
                         var end = false;
-                        console.log(texts.length)
+                        console.log(texts.length);
+                        
+                        // Click to advance
                         document.addEventListener('click', function(e) {
                             textNum++;
                             if (textNum >= texts.length) {
-                                textNum--;
+                                textNum = texts.length - 1;
                                 end = true;
                                 return;
                             }
                             text = texts[textNum];
-                            console.log(textNum)
+                            console.log(textNum);
+                        }, false);
+                        
+                        // Arrow keys to navigate
+                        document.addEventListener('keydown', function(e) {
+                            if (e.key === 'ArrowRight' || e.keyCode === 39) {
+                                textNum++;
+                                if (textNum >= texts.length) {
+                                    textNum = texts.length - 1;
+                                }
+                                text = texts[textNum];
+                                console.log('Forward:', textNum);
+                            } else if (e.key === 'ArrowLeft' || e.keyCode === 37) {
+                                textNum--;
+                                if (textNum < 0) {
+                                    textNum = 0;
+                                }
+                                text = texts[textNum];
+                                console.log('Back:', textNum);
+                            }
                         }, false);
                     }
                 };
@@ -507,8 +591,18 @@
             };
 
             // Audio initialization
+            var audioStarted = false;
             document.addEventListener('click', () => {
-              mp3.play();
+              if (!audioStarted) {
+                var mp3 = document.getElementById('mp3');
+                mp3.play().catch(function(err) {
+                  console.log('Audio play failed:', err);
+                });
+                audioStarted = true;
+                
+                // Hide instructions
+                document.getElementById('instructions').classList.add('hidden');
+              }
             }, { once: true });
 
             // Start Clock animation
